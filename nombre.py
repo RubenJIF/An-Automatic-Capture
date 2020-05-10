@@ -96,7 +96,6 @@ async def pmp(parse_object, is_pmp):
     else:
         window_pos = '--window-position=0,0'
     window_size = '--window-size=' + listas['WIDTH']+','+ listas['HEIGHT']
-    #args = ['--start-maximized', '--window-position=0,0', '--window-size=1440,900']
     args = ['--start-maximized', window_pos, window_size]
 
     browser = await launch(headless=False, defaultViewport=None, args=args)
