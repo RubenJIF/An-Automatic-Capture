@@ -4,10 +4,13 @@ from mss import mss
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import messagebox
 import os
 import configparser
 import time
 from urllib.parse import urlparse
+#from pyppeteer import errors
+
 
 def parser_web(url):
     rutas = url.split('?')
@@ -43,7 +46,6 @@ async def PTP(datos_ptp, lado):
     args = ['--start-maximized', window_pos, window_size]
     print(args)
     browser = await launch(headless=False, defaultViewport=None, args=args)
-    #browser = await launch(headless=False)
     count = 0
     index = ['1', '2', '7', '22']
     fotos_nombre = ['HOME', 'RADIO', 'ETHERNET', 'LINK STATUS']
@@ -71,11 +73,11 @@ async def PTP(datos_ptp, lado):
     await browser.close()
 
 def parse_web_pmp(url):
-    #full_url = 'http://10.25.78.200/#home'
+    #full_url = 'http://10.25.78.200/#home' or similar
     parse_object = urlparse(url)
     fragmento = parse_object.fragment
     ip = parse_object.netloc
-    print(parse_object.netloc)
+    print(ip)
     print(fragmento)
     return parse_object
 
@@ -102,17 +104,42 @@ async def pmp(parse_object, is_pmp):
     cont2 = 0
     paginas = ['#home', '#config:network_config', '#config:radio', '#config:system', '#config:quality_of_service']
     nombres = ['HOME', 'NETWORK', 'RADIO', 'SYSTEM', 'QOS']
+    ip = parse_object.netloc
+    octetos = ip.split(".")
+    try:
+        if octetos[1] == "15":
+            print("Huancavelica")
+        elif octetos[1] == "25":
+            print("Ayacucho")
+        elif octetos[1] == "35":
+            print("Apurimac")
+        elif octetos[1] == "45":
+            print("cusco")
+        else:
+            print("No es un octeto valido")
+    except IndexError:
+        messagebox.showerror(title="Problemas de Url", message="Url mal ingresada")
+        await browser.close()
     while cont2 <= 4:
         page = await browser.newPage()
         await page.setViewport({'width': int(listas['WIDTH']), 'height': int(listas['HEIGHT'])})
-
         if is_pmp is False and cont2 == 4:
             break
         url_final = str(parse_object.scheme + '://' + parse_object.netloc + parse_object.path + paginas[cont2])
         print(url_final)
-        await page.goto(url_final, {'waitUntil': 'load'})
+        try:
+            await page.goto(url_final, {'waitUntil': 'load', 'timeout': 15000})
+        except:
+            await browser.close()
         print("Página abierta")
-        if cont2 == 0:
+
+        if octetos[1] == "45" and cont2 == 0:
+            await page.waitFor(3000)
+            await page.type("input[name=username", text="admin")
+            await page.type("input[name=password]", text="admin")
+            await page.click("#loginBtn")
+
+        if octetos[1] != "45" and cont2 == 0:
             await page.type("input[name=username", text="admin")
             await page.type("input[name=password]", text="$Sat4528Reg$")
             await page.click("#loginBtn")
@@ -125,20 +152,26 @@ async def pmp(parse_object, is_pmp):
         path_finall = os.path.join(c_dir2, nombre_archivo)
         print("Ruta final a guardar cada archivo: " + path_finall)
         await page.waitForSelector("#main_content", {'visible': True})
-        time.sleep(.800)
+        await page.waitFor(800)
         captura_pantallas.shot(mon=int(listas['MON']), output=path_finall)
         print("impreso")
-        if is_pmp is True and cont2==4:
+        if is_pmp is True and cont2==4 and octetos[1] != "45":
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
-        elif is_pmp is False and cont2 == 3:
+        elif is_pmp is False and cont2 == 3 and octetos[1] != "45":
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
+        elif is_pmp is True and cont2 == 5 and octetos[1] == "45":
+            await page.click("a#login_dropdown")
+            await page.click("#loginBtn")
+        elif is_pmp is False and cont2 == 4 and octetos[1] == "45":
+            await page.click("a#login_dropdown")
+            await page.click("#loginBtn")
+        print(str(cont2) + " antes de hacer el ciclo")
         cont2+= 1
 
-    time.sleep(10)
+    time.sleep(3)
     await browser.close()
-
 
 config = configparser.ConfigParser()
 config.read('dos.ini')
@@ -154,22 +187,39 @@ full_path = os.path.join(script_dir, rel_path)
 def clicked():
 
     if selected.get() == 1:
-        url_lado_a = parser_web(url_input.get())
-        print("PTP")
-        asyncio.get_event_loop().run_until_complete(PTP(url_lado_a, side_input.get()))
+        try:
+            url_lado_a = parser_web(url_input.get())
+            print("PTP")
+            asyncio.get_event_loop().run_until_complete(PTP(url_lado_a, side_input.get()))
+            window.iconify()
+        except:
+            messagebox.showinfo(title="Ups!", message="revisa la url PTP nuevamente")
+            print("Vuelve a escribir")
     elif selected.get() == 2:
-        url_lado = parse_web_pmp(url_input.get())
-        asyncio.get_event_loop().run_until_complete(pmp(url_lado, True))
-        print("PMP")
+        try:
+            url_lado = parse_web_pmp(url_input.get())
+            asyncio.get_event_loop().run_until_complete(pmp(url_lado, True))
+            print("PMP")
+            window.iconify()
+        except:
+            messagebox.showinfo(title="Ups!", message="revisa la url PMP nuevamente")
+    elif selected.get() == 0:
+        messagebox.showinfo(title="Ups!",message="Selecciona un enlace a capturar")
     elif selected.get() == 3:
-        url_lado = parse_web_pmp(url_input.get())
-        asyncio.get_event_loop().run_until_complete(pmp(url_lado, False))
-        print("CPE")
-    else:
-        print("Escoje un tipo de enlace")
-    print(selected.get())
+        try:
+            url_lado = parse_web_pmp(url_input.get())
+            asyncio.get_event_loop().run_until_complete(pmp(url_lado, False))
+            print("CPE")
+            window.iconify()
+        except:
+            messagebox.showinfo(title="Ups!", message="revisa la url CPE nuevamente")
+    # else:
+    #     messagebox.showinfo(title="Ups!", messagebox="Escoje un tipo de enlace!")
+    #     print("Escoje un tipo de enlace")
+
+    print("Se ha seleccionado la opcion " + str(selected.get()))
     print(url_input.get())
-    window.iconify()
+
 
 def abrir_archivo():
     c2_dir = config['RUTA']['dir']
