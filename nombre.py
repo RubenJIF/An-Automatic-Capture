@@ -152,19 +152,24 @@ async def pmp(parse_object, is_pmp):
         path_finall = os.path.join(c_dir2, nombre_archivo)
         print("Ruta final a guardar cada archivo: " + path_finall)
         await page.waitForSelector("#main_content", {'visible': True})
-        await page.waitFor(800)
+        ###################### MODIFICADO
+        #await page.waitFor(800)
+        print("imprimes?")
         captura_pantallas.shot(mon=int(listas['MON']), output=path_finall)
         print("impreso")
+        ###############################MODO
         if is_pmp is True and cont2==4 and octetos[1] != "45":
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
         elif is_pmp is False and cont2 == 3 and octetos[1] != "45":
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
-        elif is_pmp is True and cont2 == 5 and octetos[1] == "45":
+        elif is_pmp is True and cont2 == 4 and octetos[1] == "45":
+            print("Clickea antes")
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
-        elif is_pmp is False and cont2 == 4 and octetos[1] == "45":
+            print("Clickea despues")
+        elif is_pmp is False and cont2 == 3 and octetos[1] == "45":
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
         print(str(cont2) + " antes de hacer el ciclo")
