@@ -43,7 +43,7 @@ async def PTP(datos_ptp, lado):
         window_pos = '--window-position=0,0'
     window_size = '--window-size=' + listas['WIDTH']+','+ listas['HEIGHT']
     #args = ['--start-maximized', '--window-position=0,0', '--window-size=1440,900']
-    args = ['--start-maximized', window_pos, window_size]
+    args = ['--start-maximized', window_pos, window_size, '--ignore-certificate-errors']
     print(args)
     browser = await launch(headless=False, defaultViewport=None, args=args)
     count = 0
@@ -98,7 +98,7 @@ async def pmp(parse_object, is_pmp):
     else:
         window_pos = '--window-position=0,0'
     window_size = '--window-size=' + listas['WIDTH']+','+ listas['HEIGHT']
-    args = ['--start-maximized', window_pos, window_size]
+    args = ['--start-maximized', window_pos, window_size, '--ignore-certificate-errors']
 
     browser = await launch(headless=False, defaultViewport=None, args=args)
     cont2 = 0
@@ -134,7 +134,7 @@ async def pmp(parse_object, is_pmp):
         print("Página abierta")
 
         if octetos[1] == "45" and cont2 == 0:
-            await page.waitFor(3000)
+            await page.waitFor(1000)
             await page.type("input[name=username", text="admin")
             await page.type("input[name=password]", text="admin")
             await page.click("#loginBtn")
@@ -143,7 +143,6 @@ async def pmp(parse_object, is_pmp):
             await page.type("input[name=username", text="admin")
             await page.type("input[name=password]", text="$Sat4528Reg$")
             await page.click("#loginBtn")
-            print("funciona?")
 
         captura_pantallas = mss(display=':0.0')
         nombre_archivo = nombres[cont2] + '.png'
@@ -152,31 +151,30 @@ async def pmp(parse_object, is_pmp):
         path_finall = os.path.join(c_dir2, nombre_archivo)
         print("Ruta final a guardar cada archivo: " + path_finall)
         await page.waitForSelector("#main_content", {'visible': True})
-        ###################### MODIFICADO
-        #await page.waitFor(800)
+        await asyncio.sleep(1)
         print("imprimes?")
         captura_pantallas.shot(mon=int(listas['MON']), output=path_finall)
         print("impreso")
-        ###############################MODO
-        if is_pmp is True and cont2==4 and octetos[1] != "45":
+        if is_pmp is True and cont2==4 and octetos[1] != '45':
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
-        elif is_pmp is False and cont2 == 3 and octetos[1] != "45":
+        elif is_pmp is False and cont2 == 3 and octetos[1] != '45':
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
-        elif is_pmp is True and cont2 == 4 and octetos[1] == "45":
+        elif is_pmp is True and cont2 == 4 and octetos[1] == '45':
             print("Clickea antes")
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
             print("Clickea despues")
-        elif is_pmp is False and cont2 == 3 and octetos[1] == "45":
+        elif is_pmp is False and cont2 == 3 and octetos[1] == '45':
             await page.click("a#login_dropdown")
             await page.click("#loginBtn")
         print(str(cont2) + " antes de hacer el ciclo")
         cont2+= 1
 
-    time.sleep(3)
+    await asyncio.sleep(2)
     await browser.close()
+
 
 config = configparser.ConfigParser()
 config.read('dos.ini')
@@ -218,9 +216,7 @@ def clicked():
             window.iconify()
         except:
             messagebox.showinfo(title="Ups!", message="revisa la url CPE nuevamente")
-    # else:
-    #     messagebox.showinfo(title="Ups!", messagebox="Escoje un tipo de enlace!")
-    #     print("Escoje un tipo de enlace")
+
 
     print("Se ha seleccionado la opcion " + str(selected.get()))
     print(url_input.get())
